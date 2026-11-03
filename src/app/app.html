@@ -8,6 +8,9 @@
   </nav>
 
   <button (click)="entrar()">Entrar</button>
+  @if (errorIngreso()) {
+    <p role="alert">{{ errorIngreso() }}</p>
+  }
 
   <button (click)="cargarPanel()" [disabled]="cargando()">Ver mis prestamos</button>
   <button (click)="pedirPrestamo(3)">Pedir el libro 3</button>
