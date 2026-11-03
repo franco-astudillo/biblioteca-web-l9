@@ -1,8 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
-import { signInWithRedirect, fetchAuthSession } from 'aws-amplify/auth';
+import { fetchAuthSession } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
+import { falloIngreso, iniciarIngreso } from './auth/resultado-ingreso';
 
 type PrestamoConLibro = {
   id: number; desde: string; hasta: string; devuelto: boolean;
@@ -23,6 +24,7 @@ export class App {
 
   readonly panel = signal<PrestamoConLibro[]>([]);
   readonly cargando = signal(false);
+  protected readonly errorIngreso = falloIngreso;
 
   constructor() {
     this.revisarGrupos();
@@ -45,7 +47,7 @@ export class App {
   }
 
   protected async entrar() {
-    await signInWithRedirect();
+    try { await iniciarIngreso(); } catch { /* La plantilla muestra el motivo seguro. */ }
   }
 
   cargarPanel(): void {

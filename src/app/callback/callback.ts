@@ -3,6 +3,7 @@ import { Router, RouterLink } from '@angular/router';
 import { fetchAuthSession } from 'aws-amplify/auth';
 import { Hub } from 'aws-amplify/utils';
 import 'aws-amplify/auth/enable-oauth-listener';
+import { falloIngreso, iniciarIngreso } from '../auth/resultado-ingreso';
 
 @Component({
   selector: 'app-callback',
@@ -16,6 +17,7 @@ export class Callback implements OnDestroy {
   private destruido = false;
 
   protected readonly estado = signal<'procesando' | 'sin-sesion' | 'error'>('procesando');
+  protected readonly detalle = falloIngreso;
 
   constructor() {
     // El evento puede llegar despues de crear el componente o la sesion ya puede existir.
@@ -26,7 +28,10 @@ export class Callback implements OnDestroy {
         this.estado.set('error');
       }
     });
-    this.limite = setTimeout(() => this.estado.set('error'), 20000);
+    this.limite = setTimeout(() => {
+      falloIngreso.set('El acceso no terminó en 20 segundos. Puedes iniciar uno nuevo.');
+      this.estado.set('error');
+    }, 20000);
     void this.siYaHaySesion();
   }
 
@@ -39,7 +44,10 @@ export class Callback implements OnDestroy {
       } else {
         clearTimeout(this.limite);
         const parametros = new URLSearchParams(window.location.search);
-        this.estado.set(parametros.has('code') || parametros.has('error') ? 'error' : 'sin-sesion');
+        if (parametros.has('code') && !falloIngreso()) {
+          falloIngreso.set('No se encontró una sesión asociada a este regreso de Cognito.');
+        }
+        this.estado.set(falloIngreso() || parametros.has('code') || parametros.has('error') ? 'error' : 'sin-sesion');
       }
     } catch {
       if (!this.destruido) {
@@ -47,6 +55,11 @@ export class Callback implements OnDestroy {
         this.estado.set('error');
       }
     }
+  }
+
+  protected async reintentar(): Promise<void> {
+    this.estado.set('procesando');
+    try { await iniciarIngreso(); } catch { this.estado.set('error'); }
   }
 
   private terminar(): void {

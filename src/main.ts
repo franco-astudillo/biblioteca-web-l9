@@ -2,6 +2,9 @@ import { bootstrapApplication } from '@angular/platform-browser';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { Amplify } from 'aws-amplify';
+import { observarResultadoIngreso } from './app/auth/resultado-ingreso';
+
+observarResultadoIngreso();
 
 // Tramo 8.3 · Amplify.configure va ANTES de bootstrapApplication: si el
 // primer componente pregunta por la sesion antes de esto, el error es

@@ -4,19 +4,22 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 const auth = vi.hoisted(() => ({
   sesion: vi.fn(),
+  ingresar: vi.fn(),
   salir: vi.fn(),
-  escuchar: undefined as undefined | ((evento: { payload: { event: string } }) => void),
+  escuchar: undefined as undefined | ((evento: { payload: { event: string; data?: unknown } }) => void),
 }));
-vi.mock('aws-amplify/auth', () => ({ fetchAuthSession: auth.sesion }));
+vi.mock('aws-amplify/auth', () => ({ fetchAuthSession: auth.sesion, signInWithRedirect: auth.ingresar }));
 vi.mock('aws-amplify/auth/enable-oauth-listener', () => ({}));
 vi.mock('aws-amplify/utils', () => ({
   Hub: { listen: vi.fn((_canal, escuchar) => { auth.escuchar = escuchar; return auth.salir; }) },
 }));
 import { Callback } from './callback';
+import { falloIngreso, observarResultadoIngreso } from '../auth/resultado-ingreso';
 
 describe('regreso de Cognito', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    falloIngreso.set(null);
     window.history.replaceState(null, '', '/callback');
     TestBed.configureTestingModule({ imports: [Callback], providers: [provideRouter([])] });
   });
@@ -72,5 +75,26 @@ describe('regreso de Cognito', () => {
     await vi.advanceTimersByTimeAsync(20000);
     fixture.detectChanges();
     expect(fixture.nativeElement.querySelector('[role="alert"]')).not.toBeNull();
+  });
+
+  it('conserva el motivo si Cognito fallo antes de crear el callback', async () => {
+    auth.sesion.mockResolvedValue({});
+    const cancelar = observarResultadoIngreso();
+    auth.escuchar?.({ payload: { event: 'signInWithRedirect_failure', data: new Error('invalid_grant') } });
+    const fixture = TestBed.createComponent(Callback);
+    await Promise.resolve(); fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('Cognito rechazó el código');
+    cancelar();
+  });
+
+  it('el boton inicia un flujo nuevo en vez de recargar el codigo anterior', async () => {
+    window.history.replaceState(null, '', '/callback?code=ejemplo');
+    auth.sesion.mockResolvedValue({});
+    auth.ingresar.mockResolvedValue(undefined);
+    const fixture = TestBed.createComponent(Callback);
+    await Promise.resolve(); fixture.detectChanges();
+    fixture.nativeElement.querySelector('button').click();
+    await Promise.resolve();
+    expect(auth.ingresar).toHaveBeenCalledOnce();
   });
 });

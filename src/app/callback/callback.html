@@ -5,8 +5,10 @@
 } @else if (estado() === 'error') {
   <div class="error" role="alert">
     <p>No se pudo completar la sesión. El enlace puede haber vencido o haberse utilizado antes.</p>
-    <p>Vuelve al catálogo y pulsa Entrar para iniciar un acceso nuevo.</p>
+    @if (detalle()) { <p>{{ detalle() }}</p> }
+    <p>Inicia un acceso nuevo desde esta misma pestaña.</p>
   </div>
+  <button (click)="reintentar()">Volver a iniciar sesión</button>
   <a routerLink="/libros">Volver al catálogo</a>
 } @else {
   <p class="apagado">
