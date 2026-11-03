@@ -35,9 +35,13 @@ export class App {
   }
 
   private async revisarGrupos() {
-    const { tokens } = await fetchAuthSession();
-    const grupos = (tokens?.accessToken?.payload['cognito:groups'] ?? []) as string[];
-    this.esBibliotecario.set(grupos.includes('bibliotecarios'));
+    try {
+      const { tokens } = await fetchAuthSession();
+      const grupos = (tokens?.accessToken?.payload['cognito:groups'] ?? []) as string[];
+      this.esBibliotecario.set(grupos.includes('bibliotecarios'));
+    } catch {
+      this.esBibliotecario.set(false);
+    }
   }
 
   protected async entrar() {

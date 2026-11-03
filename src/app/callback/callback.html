@@ -1,23 +1,16 @@
-<h2>Volviendo del login</h2>
+<h2>Iniciando sesión</h2>
 
-@if (conCodigo()) {
-  <p>
-    Traes un <code>?code=</code> en la barra de direcciones. <strong>Ese es el
-    authorization code</strong> del tramo 6.4.
-  </p>
-  <div class="error">
-    <p>
-      <strong>Y no está pasando nada más.</strong> Es el síntoma exacto del
-      tramo 8.3: falta la línea
-      <code>import 'aws-amplify/auth/enable-oauth-listener';</code> en
-      <code>src/main.ts</code>. Sin ella nadie canjea el código, y el código
-      caduca en minutos.
-    </p>
+@if (estado() === 'procesando') {
+  <p role="status">Estamos completando tu acceso. Volverás al catálogo en un momento.</p>
+} @else if (estado() === 'error') {
+  <div class="error" role="alert">
+    <p>No se pudo completar la sesión. El enlace puede haber vencido o haberse utilizado antes.</p>
+    <p>Vuelve al catálogo y pulsa Entrar para iniciar un acceso nuevo.</p>
   </div>
+  <a routerLink="/libros">Volver al catálogo</a>
 } @else {
   <p class="apagado">
-    Llegaste a <code>/callback</code> sin código. Eso pasa si abriste la
-    dirección a mano. El login se pide desde
-    <a routerLink="/libros">el catálogo</a>.
+    Necesitas iniciar sesión desde el catálogo para continuar.
   </p>
+  <a routerLink="/libros">Ir al catálogo</a>
 }
